@@ -87,6 +87,63 @@ void draw_pixel(int i, int j, char color[], int block_type)
 int height;
 int width;
 
+struct texture{
+    int **encoding;
+    char ***color_encoding;
+    int height;
+    int width;
+    int nr_colors_used;
+};
+
+struct texture upload_texture(const char* filepath)
+{
+    struct texture textura;
+
+    FILE* file = fopen(filepath,"r");
+    char* line = malloc(sizeof(char) * 256);
+    fgets(line, 256, file);
+
+    char* token = strtok(line, " ");
+    textura.height = atoi(token);
+    token = strtok(NULL," ");
+    textura.width = atoi(token);
+
+    textura.color_encoding = malloc(sizeof(char**) * 10);
+    for(int i=0;i<10;i++)
+    {
+        textura.color_encoding[i] = malloc(sizeof(char*) * 2);
+        textura.color_encoding[i][0] = malloc(sizeof(char) * 13);
+        textura.color_encoding[i][1] = malloc(sizeof(char) * 3);
+    }
+ 
+    textura.nr_colors_used = 0;
+    token = strtok(NULL, " ");
+    while(token)
+    {
+        strcpy(textura.color_encoding[textura.nr_colors_used][0], token);
+        token = strtok(NULL, " ");
+        strcpy(textura.color_encoding[textura.nr_colors_used][1], token);
+        token = strtok(NULL, " ");
+        textura.nr_colors_used++;
+    }
+
+    textura.encoding = malloc(sizeof(int*) * textura.height);
+    for(int i=0;i<textura.height;i++)
+    {
+        textura.encoding[i] = malloc(sizeof(int) * textura.width);
+    }
+    for(int i=0;i<textura.height;i++)
+    {
+        for(int j=0;j<textura.width;j++)
+        {
+            int x;
+            fscanf(file, "%d",&(textura.encoding[i][j]));
+        }
+    }
+
+    return textura;
+}
+
 int main()
 {
     struct winsize ws;
@@ -119,38 +176,21 @@ int main()
             strcpy(buffer_color[i][j],"TC_GRN");
         }
     }
-    
-    FILE* file = fopen("wall.tex","w");
+ 
+    struct texture wall = upload_texture("wall.tex");
 
-    bool ok = true;
-    int offset = 0;
-    for(int i=0;i<height;i++)
+    for(int i=0;i<wall.nr_colors_used;i++)
     {
-        for(int j=0;j<width;j++)
-        {
-            if(i%4 != 0)
-                {
-                    draw_pixel(i,((j+offset) % width),(j%15 ? TC_RED : TC_NRM),0);
-                }
-            else
-                {
-                    draw_pixel(i,j,TC_NRM,0);
-                    offset += 2;
-                    offset %= 12;
-                }
-        }
-    }
-    fprintf(file,"TC_RED 0 TC_NRM 1\n");
-    for(int i=0;i<height;i++)
+        printf("%s %s\n",wall.color_encoding[i][0],wall.color_encoding[i][1]);
+    }    
+    for(int i=0;i<wall.height;i++)
     {
-        for(int j=0;j<width;j++)
+        for(int j=0;j<wall.width;j++)
         {
-            fprintf(file,"%d ",(strcmp(buffer_color[i][j], TC_RED) ? 0 : 1));
+            printf("%d ",wall.encoding[i][j]);
         }
-        fprintf(file,"\n");
+        printf("\n");
     }
  
-    fclose(file);
-
     return 0;
 }
