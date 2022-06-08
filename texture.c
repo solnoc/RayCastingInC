@@ -86,6 +86,7 @@ void draw_pixel(int i, int j, char color[], int block_type)
 
 int height;
 int width;
+
 int main()
 {
     struct winsize ws;
@@ -119,17 +120,37 @@ int main()
         }
     }
     
+    FILE* file = fopen("wall.tex","w");
+
     bool ok = true;
-    while(true)
+    int offset = 0;
+    for(int i=0;i<height;i++)
     {
-        ok = !ok;
-        for(int i=0;i<height;i++)
+        for(int j=0;j<width;j++)
         {
-            for(int j=0;j<width;j++)
-            {
-                draw_pixel(i,j,(ok ? TC_YEL : TC_GRN),0);
-            }
-        }   
+            if(i%4 != 0)
+                {
+                    draw_pixel(i,((j+offset) % width),(j%15 ? TC_RED : TC_NRM),0);
+                }
+            else
+                {
+                    draw_pixel(i,j,TC_NRM,0);
+                    offset += 2;
+                    offset %= 12;
+                }
+        }
     }
+    fprintf(file,"TC_RED 0 TC_NRM 1\n");
+    for(int i=0;i<height;i++)
+    {
+        for(int j=0;j<width;j++)
+        {
+            fprintf(file,"%d ",(strcmp(buffer_color[i][j], TC_RED) ? 0 : 1));
+        }
+        fprintf(file,"\n");
+    }
+ 
+    fclose(file);
+
     return 0;
 }
