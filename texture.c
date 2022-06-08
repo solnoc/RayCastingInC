@@ -36,7 +36,7 @@
 
 int **buffer;
 char ***buffer_color;
-void draw_pixel(int i, int j, char color[], int block_type)
+void draw_pixel(int i, int j, char* color, int block_type)
 {
     char block[7];
     bool draw = false;
@@ -88,11 +88,9 @@ int height;
 int width;
 
 struct texture{
-    int **encoding;
-    char ***color_encoding;
+    char ***encoding;
     int height;
     int width;
-    int nr_colors_used;
 };
 
 struct texture upload_texture(const char* filepath)
@@ -108,38 +106,24 @@ struct texture upload_texture(const char* filepath)
     token = strtok(NULL," ");
     textura.width = atoi(token);
 
-    textura.color_encoding = malloc(sizeof(char**) * 10);
-    for(int i=0;i<10;i++)
-    {
-        textura.color_encoding[i] = malloc(sizeof(char*) * 2);
-        textura.color_encoding[i][0] = malloc(sizeof(char) * 13);
-        textura.color_encoding[i][1] = malloc(sizeof(char) * 3);
-    }
- 
-    textura.nr_colors_used = 0;
-    token = strtok(NULL, " ");
-    while(token)
-    {
-        strcpy(textura.color_encoding[textura.nr_colors_used][0], token);
-        token = strtok(NULL, " ");
-        strcpy(textura.color_encoding[textura.nr_colors_used][1], token);
-        token = strtok(NULL, " ");
-        textura.nr_colors_used++;
-    }
-
-    textura.encoding = malloc(sizeof(int*) * textura.height);
+    textura.encoding = malloc(sizeof(char**) * textura.height);
     for(int i=0;i<textura.height;i++)
     {
-        textura.encoding[i] = malloc(sizeof(int) * textura.width);
+        textura.encoding[i] = malloc(sizeof(char*) * textura.width);
+        for(int j=0;j<width;j++)
+        {
+            textura.encoding[i][j] = malloc(sizeof(char) * 13);
+        }
     }
     for(int i=0;i<textura.height;i++)
     {
         for(int j=0;j<textura.width;j++)
         {
-            int x;
-            fscanf(file, "%d",&(textura.encoding[i][j]));
+            fscanf(file, "%s",textura.encoding[i][j]);
         }
     }
+
+    fclose(file);
 
     return textura;
 }
@@ -176,21 +160,16 @@ int main()
             strcpy(buffer_color[i][j],"TC_GRN");
         }
     }
- 
-    struct texture wall = upload_texture("wall.tex");
 
-    for(int i=0;i<wall.nr_colors_used;i++)
+    struct texture wall = upload_texture("wall.tex");
+    
+    for(int i=0;i<height;i++)
     {
-        printf("%s %s\n",wall.color_encoding[i][0],wall.color_encoding[i][1]);
-    }    
-    for(int i=0;i<wall.height;i++)
-    {
-        for(int j=0;j<wall.width;j++)
+        for(int j=0;j<width;j++)
         {
-            printf("%d ",wall.encoding[i][j]);
+            draw_pixel(i,j,wall.encoding[i % wall.height][j % wall.width],0);
         }
-        printf("\n");
     }
- 
+
     return 0;
 }
